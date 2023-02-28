@@ -5,7 +5,8 @@
 #include <stdint.h>
 
 unsigned int polyDiv(unsigned int n, unsigned int d);
-unsigned char subBytes(unsigned char byte);
+void subBytes(unsigned char state[][4]);
+void shiftRows(unsigned char state[][4]);
 unsigned char msb(unsigned int n);
 unsigned char polyMult(unsigned char x, unsigned char y);
 unsigned char dumbInverse(unsigned char n);
@@ -30,7 +31,7 @@ void keyExpansion(unsigned char key[], unsigned char words[][4]);
                         0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16};
 int main(int argc, char* argv[]) {   
     unsigned char key[16] = {0};
-    unsigned char block[4][4]; // TODO: Block is 4*4 but should just be 1d-16 array
+    unsigned char block[4][4]; 
     read(STDIN_FILENO, key, 16);
    // for(int i = 0; i < 16; i++) {
    //     printf("%02x", key[i]);
@@ -46,21 +47,57 @@ int main(int argc, char* argv[]) {
         }
     }
     printf("\n");
-    read(STDIN_FILENO, block, 16);
+    for(int i = 0; i < 4; i++) {
+    	read(STDIN_FILENO, block[i], 16);
+    }
     unsigned char out[4][4];
     cipher(block, out, keysched);
+    printf("Output:\n");
+    size_t outputsize = 0;
     for(int i = 0; i < 16; i++) {
-        printf("%02x", out[i]);
+        for(int j = 0; j < 4; j++){
+	    printf("%02x", out[i][j]);
+	    outputsize += sizeof(out[i][j]);
+	}
     }
-    printf("\n");
+    printf("\nSize of output: %d\n", outputsize);
     return 0;
 }
 
 void cipher(unsigned char block[][4], unsigned char out[][4], unsigned char keysched[][4]){
     unsigned char state[4][4];
-    memcpy(state, block, sizeof(block[0])*4);
+    for(int i = 0; i < 4; i++) {	
+	memcpy(state[i], block[i], sizeof(block[i]));
+    }
+    //round 0
     addRoundKey(state, keysched, 0);
+
+    //round 1-9
+    for(int round = 1; round < 11; round++) {
+	subBytes(state);		
+    }
     memcpy(out,state,16);
+    for(int i = 0; i < 4; i++) {	
+		memcpy(out[i], state[i], sizeof(block[i]));
+    }
+}
+
+void shiftRows(unsigned char state[][4]) {
+	unsigned char oldState[4][4];
+	for(int i = 0; i < 4; i++) {
+		memcpy(oldState[i],state[i],sizeof(state[i]));
+	}
+	for(int i = 1; i < 4; i++) {
+		state[
+	}
+}
+
+void subBytes(unsigned char state[][4]) {
+	for(int i = 0; i < 4; i++) {
+		for(int j = 0; j < 4; j++) {
+			state[i][j] = sbox[state[i][j]];
+		}
+	}
 }
 
 void addRoundKey(unsigned char state[][4], unsigned char keysched[][4], int round){
